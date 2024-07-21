@@ -23,7 +23,8 @@ export default function LandingPage() {
             as={Link}
             color="secondary"
             variant="ghost"
-            href="contact-us/"
+	    href="contact-us/"
+	    className="text-xl"
           >
             ¡Contáctanos!
           </Button>

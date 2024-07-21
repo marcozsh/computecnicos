@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { formSchema } from "./form-validations";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 type Inputs = {
   rut: string;
@@ -15,10 +16,10 @@ type Inputs = {
 };
 
 const formInputs = [
-  { name: "rut", title: "Rut"},
-  { name: "nombre", title: "Nombre"},
-  { name: "mail", title: "Email"},
-  { name: "cel", title: "Teléfono"},
+  { name: "rut", title: "Rut" },
+  { name: "nombre", title: "Nombre" },
+  { name: "mail", title: "Email" },
+  { name: "cel", title: "Teléfono" },
 ];
 
 export default function PostsForm() {
@@ -38,9 +39,10 @@ export default function PostsForm() {
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsSubmitting(true);
     try {
-      console.log(data)
+      console.log(data);
       //const returnData = await postData(data);
-      await sleep(10000)
+      await sleep(5000);
+      toast.success("¡Mensaje enviado!");
       router.push(`/`);
     } catch {
     } finally {
@@ -62,9 +64,10 @@ export default function PostsForm() {
             render={({ field }) => (
               <Input
                 label={inputs.title}
-                color="primary"
+                color="secondary"
+                variant="bordered"
                 autoComplete={inputs.name}
-		type={inputs.name == "cel" ? "number" : "text"}
+                type={inputs.name == "cel" ? "number" : "text"}
                 //startContent={<FiUser />}
                 isInvalid={!!errors?.[inputs.name as keyof Inputs]}
                 errorMessage={errors[inputs.name as keyof Inputs]?.message}
@@ -80,7 +83,8 @@ export default function PostsForm() {
           render={({ field }) => (
             <Textarea
               label="Mensaje"
-              color="primary"
+              color="secondary"
+              variant="bordered"
               //autoComplete="email"
               //startContent="hola"
               isInvalid={!!errors?.message}
@@ -93,13 +97,13 @@ export default function PostsForm() {
           <Button
             type="submit"
             className="w-full rounded-xl"
-            color="primary"
+            color="secondary"
             isLoading
           >
             Enviando
           </Button>
         ) : (
-          <Button type="submit" className="w-full rounded-xl" color="primary">
+          <Button type="submit" className="w-full rounded-xl" color="secondary">
             Ingresar
           </Button>
         )}
