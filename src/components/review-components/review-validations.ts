@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const reviewFormSchema = z.object({
-  nombre: z
+  name: z
     .string()
     .trim()
     .min(3, {
@@ -17,4 +17,8 @@ export const reviewFormSchema = z.object({
       message: "El mensaje debe tener al menos 10 caracteres",
     })
     .max(1000, "El mensaje no puede tener más de 1000 caracteres"),
+  stars: z
+    .string()
+    .trim()
+    //.refine((stars) => {stars == null ? "0" : stars;}),
 });

@@ -2,6 +2,7 @@ import CustomFooter from "@/components/custom-footer";
 import CustomNavBar from "@/components/custom-nav-bar";
 import LandingPage from "@/components/landing-page";
 import ServicesPage from "@/components/services";
+//import Valorations from "@/components/valorations/valorations";
 import Why from "@/components/why";
 export default function CustomHome() {
   return (
@@ -19,9 +20,20 @@ export default function CustomHome() {
         >
           <ServicesPage />
         </section>
-        <section id="why" className="flex flex-row justify-center pt-[130px] min-h-screen">
+        <section
+          id="why"
+          className="flex flex-row justify-center pt-[130px] min-h-screen"
+        >
           <Why />
         </section>
+        {/*
+        <section
+          id="valorations"
+          className="flex flex-row justify-center pt-[130px] min-h-screen"
+        >
+          <Valorations params={{ approve: true }} />
+        </section>
+	*/}
         <footer>
           <CustomFooter />
         </footer>

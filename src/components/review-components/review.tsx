@@ -1,123 +1,95 @@
 "use client";
-import { useForm, SubmitHandler, Controller } from "react-hook-form";
-import { Button, Input, Textarea } from "@nextui-org/react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Input, Textarea } from "@nextui-org/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { reviewFormSchema } from "./review-validations";
+import { useEffect, useState } from "react";
 import { FaStar } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useFormState } from "react-dom";
+import { createValoritation } from "@/app/actions/actions";
+import SubmitButton from "../form/custom-submit-button";
 
-type ReviewInputs = {
-  nombre: string;
-  message: string;
-};
 
 export default function ReviewForm() {
-  const {
-    control,
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<ReviewInputs>({ resolver: zodResolver(reviewFormSchema) });
-
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
+  //rating states
   const [rating, setRating] = useState<number>(0);
-
   const [hover, setHover] = useState<number>(0);
+
+  //form states
+  const [state, formAction] = useFormState(createValoritation, null);
 
   const router = useRouter();
 
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-  const onSubmit: SubmitHandler<ReviewInputs> = async (data) => {
-    setIsSubmitting(true);
+  useEffect(() => {
     try {
-      console.log(data, rating);
-      //const returnData = await postData(data);
-      await sleep(5000);
-      toast.success("¡Valoración Enviada!");
-      router.push(`/`);
-    } catch {
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      if (state?.ok) {
+        router.push(`/`);
+        toast.success(state.message);
+      }else if (state?.message) {
+        toast.error(state.message);
+      }
+
+    } catch {}
+  }, [state]);
 
   return (
     <section className="flex flex-col gap-7">
       <h2 className="font-heading text-2xl font-bold sm:text-4xl md:text-[50px] md:leading-[60px] pb-10">
         Valora el trabajo realizado
       </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <Controller
-          control={control}
-          name="nombre"
-          render={({ field }) => (
-            <Input
-              label="Nombre"
-              color="secondary"
-              variant="bordered"
-              //startContent={<FiUser />}
-              isInvalid={!!errors?.nombre}
-              errorMessage={errors.nombre?.message}
-              {...field}
-            />
-          )}
+      <form action={formAction} className="flex flex-col gap-5">
+        <Input
+          label="Nombre"
+          color="secondary"
+          variant="bordered"
+          id="name"
+          name="name"
+          isInvalid={!!state?.errors?.name}
+          errorMessage={state?.errors?.name}
         />
 
-        <Controller
-          control={control}
+        <Textarea
+          label="Comenta tu experciencia con nuestro servicio"
+          color="secondary"
+          variant="bordered"
+          id="message"
           name="message"
-          render={({ field }) => (
-            <Textarea
-              label="Comenta tu experciencia con nuestro servicio"
-              color="secondary"
-              variant="bordered"
-              //autoComplete="email"
-              //startContent="hola"
-              isInvalid={!!errors?.message}
-              errorMessage={errors.message?.message}
-              {...field}
-            />
-          )}
+          isInvalid={!!state?.errors?.message}
+          errorMessage={state?.errors?.message}
         />
-        <div className="flex flex-row justify-center gap-6">
-          {[...Array(5)].map((_, stars) => {
-            const starRating = stars + 1;
-            return (
-              <label key={starRating}>
-                <FaStar
-                  size={50}
-                  className={`cursor-pointer hover:text-secondary hover:transition-colors hover:duration-300 hover:ease-in-out ${
-                    starRating <= (hover || rating)
-                      ? "text-secondary"
-                      : "text-gray"
-                  }`}
-                  onClick={() => setRating(starRating)}
-                  onMouseEnter={() => setHover(starRating)}
-                  onMouseLeave={() => setHover(rating)}
-                />
-              </label>
-            );
-          })}
+
+        <div className="flex flex-col gap-2 text-center">
+          <div className="flex flex-row justify-center gap-6">
+            {[...Array(5)].map((_, stars) => {
+              const starRating = stars + 1;
+              return (
+                <label key={starRating}>
+                  <input
+                    type="radio"
+                    onClick={() => setRating(starRating)}
+                    value={starRating}
+                    id="stars"
+                    name="stars"
+                    className="hidden"
+                  />
+                  <FaStar
+                    size={50}
+                    className={`cursor-pointer hover:text-secondary hover:transition-colors hover:duration-300 hover:ease-in-out ${
+                      starRating <= (hover || rating)
+                        ? "text-secondary"
+                        : "text-gray"
+                    }`}
+                    onMouseEnter={() => setHover(starRating)}
+                    onMouseLeave={() => setHover(rating)}
+                  />
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-danger">
+            {state?.errors?.stars ? "Debe marcar almenos 1 estrella" : ""}
+          </p>
         </div>
-        {isSubmitting ? (
-          <Button
-            type="submit"
-            className="w-full rounded-xl"
-            color="secondary"
-            isLoading
-          >
-            Enviando
-          </Button>
-        ) : (
-          <Button type="submit" className="w-full rounded-xl" color="secondary">
-            Ingresar
-          </Button>
-        )}
+        <SubmitButton />
       </form>
     </section>
   );
