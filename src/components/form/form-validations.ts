@@ -9,7 +9,7 @@ export const formSchema = z.object({
       message: "El rut debe llevar el guión",
     }).transform(run => Fn.sanitizeRut(run))
     .refine(run => Fn.validaRut(run), {message: "Rut inválido"}),
-  nombre: z
+  name: z
     .string()
     .trim()
     .min(3, {
@@ -18,9 +18,10 @@ export const formSchema = z.object({
     .max(200, {
       message: "El el nombre debe tener menos de 200 caracteres",
     }),
-  mail: z
+  email: z
     .string()
     .trim()
+    .email({message: "Email no válido"})
     .min(5, {
       message: "El email debe tener al menos 5 caracteres",
     })

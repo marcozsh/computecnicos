@@ -20,15 +20,16 @@ export default function ReviewForm() {
   const router = useRouter();
 
   useEffect(() => {
-    try {
+    const message = state?.message || null;
+    if (message != null) {
       if (state?.ok) {
-        router.push(`/`);
-        toast.success(state.message);
-      }else if (state?.message) {
-        toast.error(state.message);
+        router.push("/");
+        toast.success(message);
+      } else {
+        toast.error(message);
       }
+    }
 
-    } catch {}
   }, [state]);
 
   return (

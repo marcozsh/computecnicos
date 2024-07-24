@@ -34,10 +34,39 @@ html {
     text-wrap: balance;
   }
 }
-/*
-@media (min-width: 992px) {
-  main section {
-    min-height: 100vh;
+/*Carousel styles*/
+.embla {
+  width: 48rem;
+  margin: auto;
+  --slide-height: 19rem;
+  --slide-spacing: 1.2rem;
+  --slide-size: 80%;
+}
+.embla__viewport {
+  overflow: hidden;
+}
+.embla__container {
+  backface-visibility: hidden;
+  display: flex;
+  touch-action: pan-y pinch-zoom;
+  margin-left: calc(var(--slide-spacing) * -1);
+}
+.embla__slide {
+  flex: 0 0 var(--slide-size);
+  padding-left: var(--slide-spacing);
+}
+.embla__slide__number {
+  box-shadow: inset 0 0 0 0.2rem #bbb;
+  border-radius: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--slide-height);
+  user-select: none;
+}
+@media (max-width: 600px) {
+  .embla {
+    width: auto;
   }
 }
-*/
+/*Carousel styles*/
