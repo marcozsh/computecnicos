@@ -1,9 +1,16 @@
-
 import { Button } from "@nextui-org/react";
 
-import {  useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 
-export default function SubmitButton() {
+type SubmitButtonType = {
+  notPendingText: string;
+  pendingText: string;
+};
+
+export default function SubmitButton({
+  notPendingText,
+  pendingText,
+}: SubmitButtonType) {
   const { pending } = useFormStatus();
   return pending ? (
     <Button
@@ -12,11 +19,11 @@ export default function SubmitButton() {
       color="secondary"
       isLoading
     >
-      Enviando
+      {pendingText}
     </Button>
   ) : (
     <Button type="submit" className="w-full rounded-xl" color="secondary">
-      Ingresar
+      {notPendingText}
     </Button>
   );
 }

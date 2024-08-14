@@ -78,7 +78,7 @@ export default function PostsForm() {
           isInvalid={!!state?.errors?.message}
           errorMessage={state?.errors?.message}
         />
-        <SubmitButton />
+        <SubmitButton notPendingText="Enviar" pendingText="Enviando" />
       </form>
     </section>
   );

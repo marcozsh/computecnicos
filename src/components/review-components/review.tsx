@@ -90,7 +90,7 @@ export default function ReviewForm() {
             {state?.errors?.stars ? "Debe marcar almenos 1 estrella" : ""}
           </p>
         </div>
-        <SubmitButton />
+        <SubmitButton notPendingText="Enviar" pendingText="Enviando" />
       </form>
     </section>
   );

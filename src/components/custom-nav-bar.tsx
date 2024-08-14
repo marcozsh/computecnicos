@@ -8,12 +8,16 @@ import {
   NavbarMenu,
   NavbarMenuItem,
   Link,
-  Button
+  Button,
 } from "@nextui-org/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { useSession, signOut } from "next-auth/react";
+
 export default function CustomNavBar() {
+  const { data: session } = useSession();
+
   const pathname = usePathname();
 
   const index = pathname == "/home" ? true : false;
@@ -27,12 +31,17 @@ export default function CustomNavBar() {
     { name: "Servicio", href: "#services" },
     { name: "Por qué debes escogernos", href: "#why" },
     { name: "Contacto", href: "contact-us/" },
+    { name: "Registro/Iniciar Sesión", href: "admin/" },
   ];
 
-  console.log(isMenuOpen)
+  //console.log(isMenuOpen);
 
   return (
-    <Navbar className="bg-background" isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen}>
+    <Navbar
+      className="bg-background"
+      isMenuOpen={isMenuOpen}
+      onMenuOpenChange={setIsMenuOpen}
+    >
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -79,6 +88,35 @@ export default function CustomNavBar() {
             </span>
           </Link>
         </NavbarItem>
+        {session ? (
+          <>
+            <NavbarItem isActive>
+              <Link href="dashboard/">
+                <span className="text-[#fafafa] hover:text-primary hover:transition-colors hover:duration-300 hover:ease-in-out">
+                  {session.user?.name}
+                </span>
+              </Link>
+              <Button
+                className="bg-background"
+                onPress={() => {
+                  signOut({ callbackUrl: `/admin` });
+                }}
+              >
+                <span className="text-[#fafafa] hover:text-primary hover:transition-colors hover:duration-300 hover:ease-in-out">
+                  Salir
+                </span>
+              </Button>
+            </NavbarItem>
+          </>
+        ) : (
+          <NavbarItem isActive>
+            <Link href="admin/">
+              <span className="text-[#fafafa] hover:text-primary hover:transition-colors hover:duration-300 hover:ease-in-out">
+                Registro/Iniciar Sesión
+              </span>
+            </Link>
+          </NavbarItem>
+        )}
       </NavbarContent>
       <NavbarMenu>
         {menuItems.map((item, i) => (
@@ -87,8 +125,8 @@ export default function CustomNavBar() {
               className="w-full text-white bg-primary"
               href={index ? `${item.href}` : `home/${item.href}`}
               size="lg"
-	      onPress={toggleMenu}
-	      as={Link}
+              onPress={toggleMenu}
+              as={Link}
             >
               {item.name}
             </Button>
