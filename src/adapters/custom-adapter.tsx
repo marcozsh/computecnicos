@@ -1,6 +1,7 @@
 import { sql } from "@vercel/postgres";
+import { Adapter, AdapterUser } from "next-auth/adapters";
 
-interface AdapterUser {
+interface CustomAdapterUser {
   id: string;
   name?: string;
   email: string;
@@ -27,27 +28,28 @@ interface AdapterSession {
   id: string;
   sessionToken: string;
   userId: string;
-  expires: string;
+  expires: Date;
 }
 
 interface VerificationToken {
   identifier: string;
   token: string;
-  expires: string;
+  expires: Date;
 }
 
-export function PgCustomAdapter() {
+export const PgCustomAdapter = (): Adapter => {
   return {
-    async createUser(user: { name?: string; email: string; image?: string }): Promise<AdapterUser | null> {
+    //async createUser(user: { name: string; email: string; image: string }): Promise<AdapterUser | undefined> {
+    async createUser(user: Omit<AdapterUser, "id">): Promise<AdapterUser> {
       try {
         const result = await sql`
           INSERT INTO public.users (name, email, image) 
           VALUES (${user.name}, ${user.email}, ${user.image}) 
           RETURNING id, name, email, image`;
-        return result.rows[0] as AdapterUser || null;
+        return (result.rows[0] as AdapterUser) || undefined;
       } catch (error) {
         console.error("Error creando usuario:", error);
-        return null;
+        throw error;
       }
     },
 
@@ -55,7 +57,7 @@ export function PgCustomAdapter() {
       try {
         const result = await sql`
           SELECT id, name, email, image FROM public.users WHERE id = ${id}`;
-        return result.rows[0] as AdapterUser || null;
+        return (result.rows[0] as AdapterUser) || null;
       } catch (error) {
         console.error("Error obteniendo usuario:", error);
         return null;
@@ -66,38 +68,46 @@ export function PgCustomAdapter() {
       try {
         const result = await sql`
           SELECT id, name, email, image FROM public.users WHERE email = ${email}`;
-        return result.rows[0] as AdapterUser || null;
+        return (result.rows[0] as AdapterUser) || null;
       } catch (error) {
         console.error("Error obteniendo usuario por email:", error);
         return null;
       }
     },
 
-    async getUserByAccount({ providerAccountId, provider }: { providerAccountId: string; provider: string }): Promise<AdapterUser | null> {
+    async getUserByAccount({
+      providerAccountId,
+      provider,
+    }: {
+      providerAccountId: string;
+      provider: string;
+    }): Promise<AdapterUser | null> {
       try {
         const result = await sql`
           SELECT users.id, users.name, users.email, users.image
           FROM public.users
           JOIN public.accounts ON users.id = accounts."userId"
           WHERE accounts."providerAccountId" = ${providerAccountId} AND accounts.provider = ${provider}`;
-        return result.rows[0] as AdapterUser || null;
+        return (result.rows[0] as AdapterUser) || null;
       } catch (error) {
         console.error("Error obteniendo usuario por cuenta:", error);
         return null;
       }
     },
 
-    async updateUser(user: AdapterUser): Promise<AdapterUser | null> {
+    async updateUser(
+      user: Partial<AdapterUser> & Pick<AdapterUser, "id">,
+    ): Promise<AdapterUser> {
       try {
         const result = await sql`
           UPDATE public.users 
           SET name = ${user.name}, email = ${user.email}, image = ${user.image} 
           WHERE id = ${user.id} 
           RETURNING id, name, email, image`;
-        return result.rows[0] as AdapterUser || null;
+        return result.rows[0] as AdapterUser;
       } catch (error) {
         console.error("Error actualizando usuario:", error);
-        return null;
+        throw error;
       }
     },
 
@@ -120,7 +130,13 @@ export function PgCustomAdapter() {
       }
     },
 
-    async unlinkAccount({ providerAccountId, provider }: { providerAccountId: string; provider: string }): Promise<void> {
+    async unlinkAccount({
+      providerAccountId,
+      provider,
+    }: {
+      providerAccountId: string;
+      provider: string;
+    }): Promise<void> {
       try {
         await sql`
           DELETE FROM public.accounts WHERE "providerAccountId" = ${providerAccountId} AND provider = ${provider}`;
@@ -129,53 +145,95 @@ export function PgCustomAdapter() {
       }
     },
 
-    async createSession({ sessionToken, userId, expires }: { sessionToken: string; userId: string; expires: string }): Promise<AdapterSession | null> {
+    async createSession({
+      sessionToken,
+      userId,
+      expires,
+    }: {
+      sessionToken: string;
+      userId: string;
+      expires: Date;
+    }): Promise<AdapterSession> {
       try {
         const result = await sql`
           INSERT INTO public.sessions ("sessionToken", "userId", expires) 
-          VALUES (${sessionToken}, ${userId}, ${expires}) 
+          VALUES (${sessionToken}, ${userId}, ${expires.toISOString()}) 
           RETURNING id, "sessionToken", "userId", expires`;
-        return result.rows[0] as AdapterSession || null;
+        return result.rows[0] as AdapterSession;
       } catch (error) {
         console.error("Error creando sesión:", error);
-        return null;
+        throw error;
       }
     },
 
-    async getSessionAndUser(sessionToken: string): Promise<{ session: AdapterSession | null; user: AdapterUser | null }> {
+    async getSessionAndUser(
+      sessionToken: string,
+    ): Promise<{ session: AdapterSession; user: AdapterUser }> {
       try {
         const result = await sql`
           SELECT sessions.id AS session_id, sessions."sessionToken", sessions."userId", sessions.expires,
-                 users.id AS userId, users.name, users.email, users.image
+                 users.id AS userId, users.name, users.email, users.image, users."emailVerified"
           FROM public.sessions AS sessions
           JOIN public.users AS users ON sessions."userId" = users.id
           WHERE sessions."sessionToken" = ${sessionToken}`;
         const row = result.rows[0];
-	console.log(row)
+
+        // Devuelve valores predeterminados si no se encuentra la sesión
         return {
-          session: row ? { id: row.session_id, sessionToken: row.sessionToken, userId: row.userId, expires: row.expires } : null,
-          user: row ? { id: row.userId, name: row.name, email: row.email, image: row.image } : null
+          session: row
+            ? {
+                id: row.session_id,
+                sessionToken: row.sessionToken,
+                userId: row.userId,
+                expires: new Date(row.expires), // Convierte esto a Date
+              }
+            : {
+                id: "",
+                sessionToken: "",
+                userId: "",
+                expires: new Date(), // Usa una fecha por defecto o ajusta según sea necesario
+              },
+          user: row
+            ? {
+                id: row.userId,
+                name: row.name,
+                email: row.email,
+                image: row.image,
+                emailVerified: row.emailVerified
+                  ? new Date(row.emailVerified)
+                  : null, // Asegúrate de usar Date o null
+              }
+            : {
+                id: "",
+                name: "",
+                email: "",
+                image: "",
+                emailVerified: null, // Usa null o una fecha por defecto
+              },
         };
       } catch (error) {
         console.error("Error obteniendo sesión y usuario:", error);
-        return { session: null, user: null };
+        throw error;
       }
     },
 
-    async updateSession({ sessionToken, expires }: { sessionToken: string; expires: string }): Promise<AdapterSession | null> {
+    async updateSession(
+      session: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">,
+    ): Promise<AdapterSession | null> {
+      const { sessionToken, expires } = session;
+
       try {
         const result = await sql`
-          UPDATE public.sessions 
-          SET expires = ${expires} 
-          WHERE "sessionToken" = ${sessionToken} 
-          RETURNING id, "sessionToken", "userId", expires`;
-        return result.rows[0] as AdapterSession || null;
+      UPDATE public.sessions 
+      SET expires = ${expires ? expires.toISOString() : null} 
+      WHERE "sessionToken" = ${sessionToken} 
+      RETURNING id, "sessionToken", "userId", expires`;
+        return (result.rows[0] as AdapterSession) || null;
       } catch (error) {
         console.error("Error actualizando sesión:", error);
         return null;
       }
     },
-
     async deleteSession(sessionToken: string): Promise<void> {
       try {
         await sql`
@@ -185,32 +243,40 @@ export function PgCustomAdapter() {
       }
     },
 
-    async createVerificationToken({ identifier, expires, token }: VerificationToken): Promise<VerificationToken | null> {
+    async createVerificationToken({
+      identifier,
+      expires,
+      token,
+    }: VerificationToken): Promise<VerificationToken | null> {
       try {
         const result = await sql`
           INSERT INTO public.verification_tokens (identifier, token, expires) 
-          VALUES (${identifier}, ${token}, ${expires}) 
+          VALUES (${identifier}, ${token}, ${expires.toISOString()}) 
           RETURNING identifier, token, expires`;
-        return result.rows[0] as VerificationToken || null;
+        return (result.rows[0] as VerificationToken) || null;
       } catch (error) {
         console.error("Error creando token de verificación:", error);
         return null;
       }
     },
 
-    async useVerificationToken({ identifier, token }: { identifier: string; token: string }): Promise<VerificationToken | null> {
+    async useVerificationToken({
+      identifier,
+      token,
+    }: {
+      identifier: string;
+      token: string;
+    }): Promise<VerificationToken | null> {
       try {
         const result = await sql`
           DELETE FROM public.verification_tokens 
           WHERE identifier = ${identifier} AND token = ${token} 
           RETURNING identifier, token, expires`;
-        return result.rows[0] as VerificationToken || null;
+        return (result.rows[0] as VerificationToken) || null;
       } catch (error) {
         console.error("Error usando token de verificación:", error);
         return null;
       }
     },
   };
-}
-
-
+};
