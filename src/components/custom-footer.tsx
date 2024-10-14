@@ -10,7 +10,6 @@ export default function CustomFooter() {
             Horario de atención a domicilio
           </h3>
           <ul>
-            <li>Lunes - Viernes: 18:00 hasta 20:00</li>
             <li>Sábados - Domingos: 12:00 hasta 19:00</li>
           </ul>
         </div>
